@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏥 Controle de Visitas - Pacientes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- ===== HEADER ===== -->
+        <header>
+            <h1><span class="icon">🏥</span> Gestão de Pacientes</h1>
+            <div class="header-actions">
+                <button class="btn-secondary" onclick="abrirModalConfig()">🔗 Configurar API</button>
+                <button class="btn-secondary" onclick="exportarDados()">📤 Backup (Exportar)</button>
+                <button class="btn-secondary" onclick="importarDados()">📥 Restaurar (Importar)</button>
+                <button id="btnNovoPaciente" class="btn-primary">➕ Novo Paciente</button>
+            </div>
+        </header>
+
+        <!-- ===== DASHBOARD ===== -->
+        <section class="dashboard">
+            <div class="card-dashboard">
+                <h3>📊 Total Cadastrado</h3>
+                <span id="totalPacientes">0</span>
+            </div>
+            <div class="card-dashboard">
+                <h3>🔴 Visitas Atrasadas</h3>
+                <span id="visitasVencidas" class="status-vencido">0</span>
+            </div>
+            <div class="card-dashboard">
+                <h3>🟡 Próximos 30 Dias</h3>
+                <span id="visitasProximas" class="status-proximo">0</span>
+            </div>
+            <div class="card-dashboard">
+                <h3>🟢 Pacientes em Dia</h3>
+                <span id="pacientesEmDia" class="status-dia">0</span>
+            </div>
+        </section>
+
+        <!-- ===== FILTROS E PESQUISA ===== -->
+        <section class="filtros">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar por Nome ou Telefone...">
+            </div>
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="todos">📋 Todos</button>
+                <button class="filter-btn" data-filter="dia">🟢 Em Dia</button>
+                <button class="filter-btn" data-filter="proximo">🟡 Próximos</button>
+                <button class="filter-btn" data-filter="atrasado">🔴 Atrasados</button>
+            </div>
+        </section>
+
+        <!-- ===== LISTA DE PACIENTES ===== -->
+        <section class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Última Visita</th>
+                        <th>Próxima Visita</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="pacientesTableBody">
+                    <!-- Os pacientes serão inseridos aqui pelo JavaScript -->
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <!-- ===== MODAL PACIENTE (CADASTRO / EDIÇÃO) ===== -->
+    <div id="modalPaciente" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">📝 Cadastrar Paciente</h2>
+            <form id="formPaciente">
+                <input type="hidden" id="pacienteId">
+                
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label for="nome">Nome Completo *</label>
+                        <input type="text" id="nome" required placeholder="Digite o nome completo">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="telefone">📱 Telefone</label>
+                        <input type="tel" id="telefone" placeholder="(00) 00000-0000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ultimaVisita">📅 Data da Última Visita *</label>
+                        <input type="date" id="ultimaVisita" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="periodicidade">⏰ Periodicidade *</label>
+                        <select id="periodicidade" required>
+                            <option value="6">A cada 6 meses</option>
+                            <option value="12">A cada 1 ano</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="observacoes">📝 Observações Médicas</label>
+                        <textarea id="observacoes" rows="3" placeholder="Alergias, medicações, observações importantes..."></textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">💾 Salvar Paciente</button>
+                        <button type="button" class="btn-secondary" onclick="fecharModalPaciente()">Cancelar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===== MODAL VISUALIZAR ===== -->
+    <div id="modalVisualizar" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="fecharModalVisualizar()">&times;</span>
+            <h2>👁️ Ficha do Paciente</h2>
+            <div id="dadosVisuais" class="view-details">
+                <!-- Preenchido via JS -->
+            </div>
+            <div class="form-actions" style="margin-top: 20px;">
+                <button type="button" class="btn-secondary" onclick="fecharModalVisualizar()">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL CONFIRMAÇÃO EXCLUSÃO ===== -->
+    <div id="modalConfirm" class="modal">
+        <div class="modal-content" style="max-width: 450px; text-align: center;">
+            <h2 id="confirmTitle" style="color: #e53e3e; border: none;">⚠️ Excluir Paciente</h2>
+            <p id="confirmMessage" style="margin: 20px 0; font-size: 16px; color: #4a5568;"></p>
+            <div class="form-actions">
+                <button class="btn-primary" id="confirmYes" style="background: #e53e3e;">Excluir Permanentemente</button>
+                <button class="btn-secondary" id="confirmNo">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL CONFIGURAÇÃO DA API ===== -->
+    <div id="modalConfig" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <span class="close">&times;</span>
+            <h2>🔗 Configurar API (crudcrud.com)</h2>
+            <p style="margin-bottom: 15px; color: #4a5568; font-size: 14px;">
+                Acesse <strong>crudcrud.com</strong>, copie a URL do seu endpoint e cole abaixo.
+                No plano gratuito ele expira em ~24h e aceita ~100 requisições.
+            </p>
+            <form id="formConfig">
+                <div class="form-group">
+                    <label for="apiEndpoint">URL do Endpoint</label>
+                    <input type="text" id="apiEndpoint" required placeholder="https://crudcrud.com/api/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">💾 Salvar</button>
+                    <button type="button" class="btn-secondary" onclick="fecharModalConfig()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".json" style="display: none;" onchange="processarImportacao(event)">
+
+    <script src="script.js"></script>
+</body>
+</html>
